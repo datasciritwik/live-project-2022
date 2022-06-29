@@ -1,4 +1,6 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
+from streamlit_lottie import st_lottie
 import pickle
 import numpy as np
 from haversine import haversine
@@ -9,14 +11,23 @@ import plotly.express as px
 from sklearn.cluster import AgglomerativeClustering
 
 data = pickle.load(open('dataset.pkl', 'rb'))
-model = pickle.load(open('logistic_reg.pkl', 'rb'))
+model = pickle.load(open('svc.pkl', 'rb'))
+lottie_coding = helper.load_lottieurl("https://assets8.lottiefiles.com/packages/lf20_i04mzc5i.json")
+lottie_coding1 = helper.load_lottieurl("https://assets4.lottiefiles.com/packages/lf20_OX0Ts3.json")
 
-
-project = st.sidebar.radio('SELECT AN OPTION', ['HOME', 'PREDICTION', 'SCHEDULING'])
+##st.title('\tPathology Scheduling')
+st.markdown("<h1 style='text-align: center; color: red;'>Pathology Specimen Collection Scheduling</h1>", unsafe_allow_html=True)
+#project = st.sidebar.radio(menu_title = 'SELECT AN OPTION', options =  ['HOME', 'PREDICTION', 'SCHEDULING'])
+project = option_menu(menu_title=None,
+                      options=['HOME', 'PREDICTION', 'SCHEDULING'],
+                      default_index=0,
+                      orientation="horizontal",
+                      icons=['house-fill', 'steam', 'telephone-plus-fill']
+                      )
 
 if project == 'PREDICTION':
-    st.sidebar.image('https://www.rabkindermpath.com/blog/admin/uploads/2020/rabkindx3.jpg')
-    st.title('Pathology Specimen Collection')
+    #st.sidebar.image('https://www.rabkindermpath.com/blog/admin/uploads/2020/rabkindx3.jpg')
+    st.header('Prediction for Agent Arrival ')
     agent_id = st.selectbox('Select Agent ID', data['Agent ID'].unique())
     slot = st.selectbox('Select Booking Slot', ['06:00 to 21:00 (Home)' , '19:00 to 22:00 (working person)', '06:00 to 18:00 (Collect at work place)'])
     gender = st.radio('Select Gender', ['Female', 'Male'])
@@ -76,6 +87,8 @@ if project == 'PREDICTION':
         else:
             st.success(f'Agent will reached within {64} minutes')
             st.write('Your Location is to far')
+        ## gif
+        st_lottie(lottie_coding, height=200)
 
 if project == 'HOME':
     st.image('https://upload.wikimedia.org/wikipedia/commons/6/62/Latitude_and_Longitude_of_the_Earth.svg')
@@ -109,9 +122,12 @@ if project == 'HOME':
         if st.button('Calculate'):
             distance = int(haversine(loc1, loc2, unit='m'))
             st.success(f'Shortest Distance Between Agent and Patient is {distance} meters')
+            ## gif
+            st_lottie(lottie_coding1, height=200)
+
 if project == 'SCHEDULING':
     df = pd.read_csv('final.csv')
-
+    st.header('Agent Scheduling')
     df.rename(columns={'shortest distance Agent-Pathlab(m)': 'Distance Agent-Pathlab',  ##unit = meters
                        'shortest distance Patient-Pathlab(m)': 'Distance Patient-Pathlab',  ##unit = meters
                        'shortest distance Patient-Agent(m)': 'Distance Patient-Agent',  ##unit = meters
@@ -169,10 +185,11 @@ if project == 'SCHEDULING':
     selected_df['clusters'] = selected_df['clusters'].astype('int64')
     selected_df = selected_df.sort_values(by='clusters')
 
-    if st.checkbox('FULL DETAILS'):
+    if st.checkbox('SHOW DETAILS'):
         final = selected_df.drop(['Patient Availability from', 'Patient Availability to', 'clusters'], axis=1,
                                  inplace=True)
         st.dataframe(selected_df)
+
         ## 1st plot
         fig = px.bar(selected_df, x='Age', y='Specimen Storage', color='Gender', text_auto=True)
         st.title("Specimen Storage Types")
